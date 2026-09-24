@@ -8,6 +8,7 @@ import type { Model } from './index.js'
 import {
   AnchorTooltip,
   Message,
+  SyncTriggerHover,
   init,
   triggerId,
   update,
@@ -17,6 +18,13 @@ import {
 const acknowledgeAnchor = Scene.Mount.resolve(
   AnchorTooltip,
   Message.CompletedAnchorTooltip(),
+)
+
+// NOTE: the test DOM is never :hover, so the trigger's hover-sync Mount
+// reports LeftTrigger everywhere it is acknowledged.
+const acknowledgeHoverSync = Scene.Mount.resolve(
+  SyncTriggerHover,
+  Message.LeftTrigger(),
 )
 
 const sceneView =
@@ -56,6 +64,7 @@ describe('Tooltip', () => {
       Scene.scene(
         { update, view: sceneView() },
         Scene.given(hiddenModel),
+        acknowledgeHoverSync,
         Scene.expect(trigger).toHaveAttr('aria-describedby', 'test-panel'),
         Scene.expect(trigger).not.toHaveAttr('data-open'),
       )
@@ -65,6 +74,7 @@ describe('Tooltip', () => {
       Scene.scene(
         { update, view: sceneView() },
         Scene.given(hiddenModel),
+        acknowledgeHoverSync,
         Scene.expect(panel).toBeAbsent(),
       )
     })
@@ -73,6 +83,7 @@ describe('Tooltip', () => {
       Scene.scene(
         { update, view: sceneView() },
         Scene.given(triggerFocus.model),
+        acknowledgeHoverSync,
         Scene.expect(panel).toExist(),
         Scene.expect(panel).toHaveAttr('role', 'tooltip'),
         Scene.expect(panel).toHaveAttr('id', 'test-panel'),
@@ -84,6 +95,7 @@ describe('Tooltip', () => {
       Scene.scene(
         { update, view: sceneView() },
         Scene.given(triggerFocus.model),
+        acknowledgeHoverSync,
         Scene.expect(trigger).toHaveAttr('data-open', ''),
         acknowledgeAnchor,
       )
@@ -93,6 +105,7 @@ describe('Tooltip', () => {
       Scene.scene(
         { update, view: sceneView() },
         Scene.given(triggerFocus.model),
+        acknowledgeHoverSync,
         Scene.expect(panel).toHaveStyle('position', 'absolute'),
         Scene.expect(panel).toHaveStyle('margin', '0'),
         Scene.expect(panel).toHaveStyle('visibility', 'hidden'),
@@ -120,6 +133,7 @@ describe('Tooltip', () => {
       Scene.scene(
         { update, view: sceneView() },
         Scene.given(hiddenModel),
+        acknowledgeHoverSync,
         Scene.expect(trigger).not.toHaveAttr('aria-label'),
         Scene.expect(trigger).not.toHaveAttr('aria-labelledby'),
       )
@@ -129,6 +143,7 @@ describe('Tooltip', () => {
       Scene.scene(
         { update, view: sceneView({ ariaLabel: 'More info' }) },
         Scene.given(hiddenModel),
+        acknowledgeHoverSync,
         Scene.expect(trigger).toHaveAttr('aria-label', 'More info'),
         Scene.expect(trigger).not.toHaveAttr('aria-labelledby'),
       )
@@ -138,6 +153,7 @@ describe('Tooltip', () => {
       Scene.scene(
         { update, view: sceneView({ ariaLabelledBy: 'info-label' }) },
         Scene.given(hiddenModel),
+        acknowledgeHoverSync,
         Scene.expect(trigger).toHaveAttr('aria-labelledby', 'info-label'),
         Scene.expect(trigger).not.toHaveAttr('aria-label'),
       )
@@ -153,6 +169,7 @@ describe('Tooltip', () => {
           }),
         },
         Scene.given(hiddenModel),
+        acknowledgeHoverSync,
         Scene.expect(trigger).toHaveAttr('aria-label', 'More info'),
         Scene.expect(trigger).not.toHaveAttr('aria-labelledby'),
       )
