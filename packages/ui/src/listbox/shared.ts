@@ -921,6 +921,30 @@ export const makeView = <Model extends BaseModel>(behavior: ViewBehavior) => {
               }),
             ),
           ),
+          Match.when(isPrintableKey, () => {
+            if (isReadOnly) {
+              return Option.some(Message.SuppressedItemCommit())
+            }
+
+            return pipe(
+              resolveTypeaheadMatch(
+                items,
+                key,
+                selectedItemIndex,
+                isItemDisabledByIndex,
+                itemToSearchText,
+                false,
+              ),
+              Option.flatMap(index =>
+                pipe(
+                  Array.get(items, index),
+                  Option.map(item =>
+                    Message.SelectedItem({ item: itemToValue(item) }),
+                  ),
+                ),
+              ),
+            )
+          }),
           Match.orElse(() => Option.none()),
         )
       }

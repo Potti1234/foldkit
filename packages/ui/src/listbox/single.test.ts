@@ -1754,6 +1754,58 @@ describe('Listbox', () => {
       })
     })
 
+    describe('closed-state typeahead', () => {
+      const button = Scene.selector('#test-button')
+
+      it('selects the first matching item without opening', () => {
+        Scene.scene(
+          { update, view: sceneView() },
+          Scene.given(closedModel()),
+          Scene.keydown(button, 'B'),
+          Scene.expectOutMessage(OutMessage.Selected({ value: 'Banana' })),
+          Scene.Command.expectNone(),
+          Scene.expect(Scene.selector('#test-items-container')).toBeAbsent(),
+        )
+      })
+
+      it('searches forward from the selected item', () => {
+        Scene.scene(
+          {
+            update,
+            view: sceneView({
+              items: ['Alpha', 'Avocado', 'Beta'],
+              maybeSelectedValue: Option.some('Alpha'),
+            }),
+          },
+          Scene.given(closedModel()),
+          Scene.keydown(button, 'a'),
+          Scene.expectOutMessage(OutMessage.Selected({ value: 'Avocado' })),
+          Scene.Command.expectNone(),
+        )
+      })
+
+      it('does nothing on a key with no match', () => {
+        Scene.scene(
+          { update, view: sceneView() },
+          Scene.given(closedModel()),
+          Scene.keydown(button, 'z'),
+          Scene.expectIgnored(),
+          Scene.expectNoOutMessage(),
+          Scene.Command.expectNone(),
+        )
+      })
+
+      it('does not select while read-only', () => {
+        Scene.scene(
+          { update, view: sceneView({ isReadOnly: true }) },
+          Scene.given(closedModel()),
+          Scene.keydown(button, 'B'),
+          Scene.expectNoOutMessage(),
+          Scene.Command.expectNone(),
+        )
+      })
+    })
+
     describe('form integration', () => {
       it('renders hidden input when name is provided', () => {
         Scene.scene(
