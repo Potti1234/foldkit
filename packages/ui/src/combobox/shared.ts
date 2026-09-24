@@ -67,6 +67,10 @@ export type BaseInitConfig = Readonly<{
    *  `false`. */
   immediate?: boolean
   selectInputOnFocus?: boolean
+  /** Seeds the input's displayed text. Pass the display text of a selection
+   *  the parent restores before mount, so the input shows the committed
+   *  value instead of opening blank until the first close. */
+  inputValue?: string
 }>
 
 /** Creates the shared base fields for a combobox model from a config. Each variant spreads this and adds its selection fields. */
@@ -81,7 +85,7 @@ export const baseInit = (config: BaseInitConfig): BaseModel => ({
   animation: Animation.init({ id: `${config.id}-items` }),
   maybeActiveItemIndex: Option.none(),
   activationTrigger: 'Keyboard',
-  inputValue: '',
+  inputValue: config.inputValue ?? '',
   maybeLastPointerPosition: Option.none(),
 })
 
