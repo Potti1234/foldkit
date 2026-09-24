@@ -1646,6 +1646,19 @@ describe('Listbox', () => {
         )
       })
 
+      it('ignores keys pressed with a command modifier', () => {
+        Scene.scene(
+          { update, view: sceneView({ isReadOnly: true }) },
+          Scene.given(openModel()),
+          acknowledgeAnchor,
+          acknowledgeBackdrop,
+          Scene.keydown(itemsContainer, 'B', { metaKey: true }),
+          Scene.expectIgnored(),
+          Scene.expectNoOutMessage(),
+          Scene.Command.expectNone(),
+        )
+      })
+
       it('keeps arrow, Home, and End navigation live', () => {
         Scene.scene(
           { update, view: sceneView({ isReadOnly: true }) },
@@ -1801,6 +1814,30 @@ describe('Listbox', () => {
           Scene.given(closedModel()),
           Scene.keydown(button, 'B'),
           Scene.expectNoOutMessage(),
+          Scene.Command.expectNone(),
+        )
+      })
+
+      it.each([{ metaKey: true }, { ctrlKey: true }, { altKey: true }])(
+        'ignores keys pressed with a command modifier',
+        modifiers => {
+          Scene.scene(
+            { update, view: sceneView() },
+            Scene.given(closedModel()),
+            Scene.keydown(button, 'B', modifiers),
+            Scene.expectIgnored(),
+            Scene.expectNoOutMessage(),
+            Scene.Command.expectNone(),
+          )
+        },
+      )
+
+      it('still typeaheads a shifted letter', () => {
+        Scene.scene(
+          { update, view: sceneView() },
+          Scene.given(closedModel()),
+          Scene.keydown(button, 'B', { shiftKey: true }),
+          Scene.expectOutMessage(OutMessage.Selected({ value: 'Banana' })),
           Scene.Command.expectNone(),
         )
       })
