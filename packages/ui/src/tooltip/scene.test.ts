@@ -9,6 +9,7 @@ import {
   AnchorTooltip,
   Message,
   SyncTriggerHover,
+  WaitBeforeShowing,
   init,
   triggerId,
   update,
@@ -177,6 +178,21 @@ describe('Tooltip', () => {
 
     it('triggerId derives the trigger id from the base id', () => {
       expect(triggerId('test')).toBe('test-trigger')
+    })
+
+    it('re-arms the show delay when the hover-sync Mount reports hovered', () => {
+      Scene.scene(
+        { update, view: sceneView() },
+        Scene.given(hiddenModel),
+        Scene.Mount.resolve(SyncTriggerHover, Message.EnteredTrigger()),
+        Scene.Command.expectHas(WaitBeforeShowing),
+        Scene.Command.resolve(
+          WaitBeforeShowing,
+          Message.CompletedWaitBeforeShowing({ version: 1 }),
+        ),
+        Scene.expect(panel).toExist(),
+        acknowledgeAnchor,
+      )
     })
   })
 })
