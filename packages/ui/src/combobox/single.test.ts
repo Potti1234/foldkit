@@ -83,6 +83,10 @@ describe('Combobox', () => {
       })
     })
 
+    it('seeds the input display text from inputValue', () => {
+      expect(init({ id: 'test', inputValue: 'Kyiv' }).inputValue).toBe('Kyiv')
+    })
+
     it('accepts isAnimated option', () => {
       const model = init({ id: 'test', isAnimated: true })
       expect(model.isAnimated).toBe(true)

@@ -313,7 +313,7 @@ export const anchorSetup = (
           crossAxis: crossAxis ?? 0,
         }),
         ...(isLocked ? [] : [flip({ padding: padding ?? 0 })]),
-        shift({ padding: padding ?? 0 }),
+        shift({ padding: padding ?? 0, crossAxis: true }),
         size({
           padding: padding ?? 0,
           apply({ rects, availableHeight }) {

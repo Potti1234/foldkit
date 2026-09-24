@@ -897,9 +897,16 @@ export const makeView = <Model extends BaseModel>(behavior: ViewBehavior) => {
         ),
       )
 
-      const handleButtonKeyDown = (key: string): Option.Option<Message> => {
+      const handleButtonKeyDown = (
+        key: string,
+        modifiers: {
+          readonly ctrlKey: boolean
+          readonly altKey: boolean
+          readonly metaKey: boolean
+        },
+      ): Option.Option<Message> => {
         if (isOpen) {
-          return handleItemsKeyDown(key)
+          return handleItemsKeyDown(key, modifiers)
         }
 
         return Match.value(key).pipe(
@@ -920,6 +927,37 @@ export const makeView = <Model extends BaseModel>(behavior: ViewBehavior) => {
                 ),
               }),
             ),
+          ),
+          Match.when(
+            key =>
+              isPrintableKey(key) &&
+              !modifiers.ctrlKey &&
+              !modifiers.altKey &&
+              !modifiers.metaKey,
+            () => {
+              if (isReadOnly) {
+                return Option.some(Message.SuppressedItemCommit())
+              }
+
+              return pipe(
+                resolveTypeaheadMatch(
+                  items,
+                  key,
+                  selectedItemIndex,
+                  isItemDisabledByIndex,
+                  itemToSearchText,
+                  false,
+                ),
+                Option.flatMap(index =>
+                  pipe(
+                    Array.get(items, index),
+                    Option.map(item =>
+                      Message.SelectedItem({ item: itemToValue(item) }),
+                    ),
+                  ),
+                ),
+              )
+            },
           ),
           Match.orElse(() => Option.none()),
         )
@@ -994,7 +1032,14 @@ export const makeView = <Model extends BaseModel>(behavior: ViewBehavior) => {
         }
       }
 
-      const handleItemsKeyDown = (key: string): Option.Option<Message> =>
+      const handleItemsKeyDown = (
+        key: string,
+        modifiers: {
+          readonly ctrlKey: boolean
+          readonly altKey: boolean
+          readonly metaKey: boolean
+        },
+      ): Option.Option<Message> =>
         Match.value(key).pipe(
           Match.when('Escape', () => Option.some(Message.Closed())),
           Match.when('Enter', resolveCommitMessage),
@@ -1011,7 +1056,14 @@ export const makeView = <Model extends BaseModel>(behavior: ViewBehavior) => {
               }),
             ),
           ),
-          Match.when(isPrintableKey, () => searchForKey(key)),
+          Match.when(
+            key =>
+              isPrintableKey(key) &&
+              !modifiers.ctrlKey &&
+              !modifiers.altKey &&
+              !modifiers.metaKey,
+            () => searchForKey(key),
+          ),
           Match.orElse(() => Option.none()),
         )
 

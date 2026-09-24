@@ -85,6 +85,23 @@ export const WaitBeforeShowing = Command.define('WaitBeforeShowing', {
     ),
 })
 
+/** Reconciles the Model's hover state with the DOM when the trigger mounts.
+ *  A remount under a stationary pointer fires no `mouseenter`/`mouseleave`,
+ *  so without this Mount the Model would keep `isHovered: true` while no
+ *  `WaitBeforeShowing` is ever armed again — the tooltip wedges shut until
+ *  the pointer leaves and re-enters. On mount the element's `:hover` state
+ *  is the truth: dispatch `EnteredTrigger` when hovered, `LeftTrigger` when
+ *  not, so the Model converges either way. */
+export const SyncTriggerHover = Mount.define('SyncTriggerHover', {
+  messages: [Message.EnteredTrigger, Message.LeftTrigger],
+  execute: ({ element }) =>
+    Effect.sync(() =>
+      element.matches(':hover')
+        ? Message.EnteredTrigger()
+        : Message.LeftTrigger(),
+    ),
+})
+
 /** The anchor-positioning Mount this Tooltip renders on its panel. */
 export const AnchorTooltip = Mount.define('AnchorTooltip', {
   args: { buttonId: Schema.String, anchor: AnchorConfig },
@@ -316,6 +333,7 @@ export const view = defineView<Model, Message, ViewInputs>(
       ...(isDisabled
         ? [h.AriaDisabled(true), h.DataAttribute('disabled', '')]
         : [
+            h.OnMount(SyncTriggerHover()),
             h.OnMouseEnter(Message.EnteredTrigger()),
             h.OnMouseLeave(Message.LeftTrigger()),
             h.OnFocus(Message.FocusedTrigger()),

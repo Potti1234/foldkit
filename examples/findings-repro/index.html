@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="/src/styles.css" rel="stylesheet" />
+    <title>Foldkit upstream findings — repros</title>
+  </head>
+  <body class="p-8 font-sans">
+    <h1 class="text-xl font-semibold mb-4">
+      Upstream findings — minimal repros
+    </h1>
+    <p class="mb-4 text-sm text-gray-600">
+      Each page is a standalone foldkit program. Open devtools — schema errors
+      and exceptions surface in the console and the foldkit devtools overlay.
+    </p>
+    <ul class="list-disc pl-6 space-y-2 text-blue-700">
+      <li>
+        <a class="underline" href="/f06.html"
+          >F6 — combobox: Enter on an empty list</a
+        >
+      </li>
+      <li>
+        <a class="underline" href="/f15.html"
+          >F15 — combobox: committed value not seeded into input</a
+        >
+      </li>
+      <li>
+        <a class="underline" href="/f38.html"
+          >F38 — popover: side=right overflows a 390px viewport</a
+        >
+      </li>
+      <li>
+        <a class="underline" href="/f43.html"
+          >F43 — listbox select: closed-state typeahead is inert</a
+        >
+      </li>
+      <li>
+        <a class="underline" href="/f52.html"
+          >F52 — slider: read-only thumb consumes arrow keys</a
+        >
+      </li>
+      <li>
+        <a class="underline" href="/f54.html"
+          >F54 — tooltip: generation wedge after remount</a
+        >
+      </li>
+    </ul>
+  </body>
+</html>
