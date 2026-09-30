@@ -2196,7 +2196,7 @@ describe('Combobox', () => {
         )
       })
 
-      it('keeps Home and End navigation live', () => {
+      it('leaves Home and End to the text caret', () => {
         Scene.scene(
           {
             update,
@@ -2206,19 +2206,13 @@ describe('Combobox', () => {
           acknowledgeAnchor,
           acknowledgeBackdrop,
           Scene.keydown(input, 'End'),
-          Scene.expect(item(1)).toHaveAttr('data-active', ''),
-          Scene.expectNoOutMessage(),
-          Scene.Command.resolve(
-            ScrollIntoView,
-            Message.CompletedScrollIntoView(),
-          ),
+          Scene.expectIgnored(),
+          Scene.expect(item(0)).toHaveAttr('data-active', ''),
           Scene.keydown(input, 'Home'),
+          Scene.expectIgnored(),
           Scene.expect(item(0)).toHaveAttr('data-active', ''),
           Scene.expectNoOutMessage(),
-          Scene.Command.resolve(
-            ScrollIntoView,
-            Message.CompletedScrollIntoView(),
-          ),
+          Scene.Command.expectNone(),
         )
       })
 

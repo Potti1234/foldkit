@@ -1106,24 +1106,6 @@ export const makeView = <Model extends BaseModel>(behavior: ViewBehavior) => {
               Message.Closed({ restingInputValue, isClearable: !isReadOnly }),
             )
           }),
-          Match.whenOr('Home', 'End', () => {
-            if (!isOpen) {
-              return Option.none()
-            }
-
-            if (Array.isReadonlyArrayEmpty(items)) {
-              return Option.some(Message.SuppressedEmptyItemNavigation())
-            }
-
-            const targetIndex = resolveActiveIndex(key)
-            return Option.some(
-              Message.ActivatedItem({
-                index: targetIndex,
-                activationTrigger: 'Keyboard',
-                maybeImmediateSelection: resolveImmediateSelection(targetIndex),
-              }),
-            )
-          }),
           Match.orElse(() => Option.none()),
         )
 
