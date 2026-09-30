@@ -1412,12 +1412,19 @@ export const makeView = <Model extends BaseModel>(behavior: ViewBehavior) => {
 
       const hiddenInputs = formName
         ? Array.match(selectedValues, {
-            onEmpty: () => [h.input([h.Type('hidden'), h.Name(formName)])],
+            onEmpty: () => [
+              h.input([
+                h.Type('hidden'),
+                h.Name(formName),
+                ...(isDisabled ? [h.Disabled(true)] : []),
+              ]),
+            ],
             onNonEmpty: Array.map(selectedValue =>
               h.input([
                 h.Type('hidden'),
                 h.Name(formName),
                 h.Value(selectedValue),
+                ...(isDisabled ? [h.Disabled(true)] : []),
               ]),
             ),
           })

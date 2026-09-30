@@ -1409,6 +1409,25 @@ describe('Combobox', () => {
       )
     })
 
+    it('disables hidden inputs when isDisabled', () => {
+      Scene.scene(
+        {
+          update,
+          view: sceneView({
+            formName: 'fruit',
+            isDisabled: true,
+            maybeSelectedValue: Option.some('Apple'),
+          }),
+        },
+        Scene.given(closedModel()),
+        Scene.tap(({ html }) => {
+          const hiddenInput = Scene.find(html, 'input[type="hidden"]')
+          expect(hiddenInput).toExist()
+          expect(hiddenInput).toBeDisabled()
+        }),
+      )
+    })
+
     it('items have role="option"', () => {
       Scene.scene(
         { update, view: sceneView() },
