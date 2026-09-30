@@ -1488,6 +1488,41 @@ describe('Listbox', () => {
       })
     })
 
+    describe('edge cases', () => {
+      const itemsContainer = Scene.selector('#test-items')
+      const item = (index: number) => Scene.selector(`#test-item-${index}`)
+
+      it('does not wrap focus at the list edges', () => {
+        Scene.scene(
+          { update, view: sceneView() },
+          Scene.given(openModel()),
+          acknowledgeAnchor,
+          acknowledgeBackdrop,
+          Scene.keydown(itemsContainer, 'ArrowDown'),
+          Scene.Command.resolve(
+            ScrollIntoView,
+            Message.CompletedScrollIntoView(),
+          ),
+          Scene.expect(item(1)).toHaveAttr('data-active', ''),
+          Scene.keydown(itemsContainer, 'ArrowDown'),
+          Scene.expectHandled(),
+          Scene.expect(item(1)).toHaveAttr('data-active', ''),
+          Scene.Command.expectNone(),
+          Scene.keydown(itemsContainer, 'ArrowUp'),
+          Scene.Command.resolve(
+            ScrollIntoView,
+            Message.CompletedScrollIntoView(),
+          ),
+          Scene.expect(item(0)).toHaveAttr('data-active', ''),
+          Scene.keydown(itemsContainer, 'ArrowUp'),
+          Scene.expectHandled(),
+          Scene.expect(item(0)).toHaveAttr('data-active', ''),
+          Scene.Command.expectNone(),
+          Scene.expectNoOutMessage(),
+        )
+      })
+
+    })
 
     describe('read-only', () => {
       const button = Scene.selector('#test-button')

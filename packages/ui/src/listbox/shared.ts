@@ -485,16 +485,27 @@ export const makeUpdate = <Model extends BaseModel>(
         return closeListbox(model, closeWithoutFocusCommands)
       },
 
-      ActivatedItem: ({ index, activationTrigger }) => ({
-        model: modifyBaseFields(model, {
-          maybeActiveItemIndex: () => Option.some(index),
-          activationTrigger: () => activationTrigger,
-        }),
-        commands:
-          activationTrigger === 'Keyboard'
-            ? [ScrollIntoView({ id: model.id, index })]
-            : [],
-      }),
+      ActivatedItem: ({ index, activationTrigger }) => {
+        if (
+          Option.exists(
+            model.maybeActiveItemIndex,
+            activeIndex => activeIndex === index,
+          )
+        ) {
+          return { model }
+        }
+
+        return {
+          model: modifyBaseFields(model, {
+            maybeActiveItemIndex: () => Option.some(index),
+            activationTrigger: () => activationTrigger,
+          }),
+          commands:
+            activationTrigger === 'Keyboard'
+              ? [ScrollIntoView({ id: model.id, index })]
+              : [],
+        }
+      },
 
       MovedPointerOverItem: ({ index, screenX, screenY }) => {
         const isSamePosition = Option.exists(
@@ -1006,6 +1017,7 @@ export const makeView = <Model extends BaseModel>(behavior: ViewBehavior) => {
               items.length,
               activeIndex,
               isItemDisabledByIndex,
+              false,
             )(key),
         })
 
