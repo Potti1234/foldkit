@@ -99,9 +99,7 @@ const view = (model: Model, h: HtmlBuilder<Message>): Document => ({
       ),
       h.button(
         [
-          h.Class(
-            'w-fit rounded bg-gray-800 px-3 py-1.5 text-sm text-white',
-          ),
+          h.Class('w-fit rounded bg-gray-800 px-3 py-1.5 text-sm text-white'),
           h.OnClick(Message.ClickedVirtualClickButton()),
         ],
         ['virtual-click Banana'],

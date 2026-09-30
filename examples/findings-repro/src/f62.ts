@@ -28,9 +28,7 @@ type Message = typeof Message.Type
 
 // UPDATE
 
-const foldMenuOutMessage = Menu.OutMessage.match<
-  Update.Step<Model, Message>
->({
+const foldMenuOutMessage = Menu.OutMessage.match<Update.Step<Model, Message>>({
   Selected: () => model => ({ model }),
 })
 

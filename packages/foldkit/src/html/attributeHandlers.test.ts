@@ -76,7 +76,9 @@ describe('OnClickDetail', () => {
 
     const vnode = h.div([
       h.OnClickDetail(detail =>
-        detail === 0 ? Option.some({ _tag: 'IgnoredMouseClick' }) : Option.none(),
+        detail === 0
+          ? Option.some({ _tag: 'IgnoredMouseClick' })
+          : Option.none(),
       ),
     ])
 
