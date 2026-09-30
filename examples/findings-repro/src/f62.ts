@@ -1,7 +1,8 @@
 // F62 — menu: right-clicking the backdrop of an open menu raised the
 // browser context menu over the UI (the backdrop had no contextmenu
 // handler). Repro: open the menu and right-click the dimmed backdrop —
-// no native context menu may appear and the app menu stays open.
+// no native context menu may appear; the right-click's mousedown then
+// dismisses the app menu as a normal outside press.
 import { Option, Schema } from 'effect'
 import { Runtime, Update } from 'foldkit'
 import type { Document, HtmlBuilder } from 'foldkit/html'
@@ -64,7 +65,7 @@ const view = (model: Model, h: HtmlBuilder<Message>): Document => ({
       h.p(
         [h.Class('text-sm text-gray-600')],
         [
-          'Open the menu, then right-click the dimmed backdrop around it: the native context menu must NOT appear and the app menu must stay open. Buggy (pre-fix): the browser menu opened over the UI.',
+          'Open the menu, then right-click the dimmed backdrop around it: the native context menu must NOT appear, and the app menu closes as a normal outside press. Buggy (pre-fix): the browser menu opened over the UI.',
         ],
       ),
       h.p(
