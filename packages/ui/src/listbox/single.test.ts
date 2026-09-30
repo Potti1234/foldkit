@@ -1488,6 +1488,7 @@ describe('Listbox', () => {
       })
     })
 
+
     describe('read-only', () => {
       const button = Scene.selector('#test-button')
       const itemsContainer = Scene.selector('#test-items')
@@ -2056,15 +2057,14 @@ describe('Listbox', () => {
     })
 
     describe('orientation', () => {
-      it('items container has aria-orientation="vertical" by default', () => {
+      it('items container has no aria-orientation by default', () => {
         Scene.scene(
           { update, view: sceneView() },
           Scene.given(openModel()),
           Scene.tap(({ html }) => {
-            expect(Scene.find(html, '[key="test-items-container"]')).toHaveAttr(
-              'aria-orientation',
-              'vertical',
-            )
+            expect(
+              Scene.find(html, '[key="test-items-container"]'),
+            ).not.toHaveAttr('aria-orientation')
           }),
           acknowledgeAnchor,
           acknowledgeBackdrop,

@@ -1123,7 +1123,9 @@ export const makeView = <Model extends BaseModel>(behavior: ViewBehavior) => {
       const itemsContainerAttributes = [
         h.Id(`${id}-items`),
         h.Role('listbox'),
-        h.AriaOrientation(String.toLowerCase(orientation)),
+        ...(orientation === 'Horizontal'
+          ? [h.AriaOrientation('horizontal')]
+          : []),
         ...(behavior.ariaMultiSelectable ? [h.AriaMultiSelectable(true)] : []),
         ...(isReadOnly
           ? [h.AriaReadonly(true), h.DataAttribute('readonly', '')]
