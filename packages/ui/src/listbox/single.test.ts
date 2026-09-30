@@ -1522,6 +1522,32 @@ describe('Listbox', () => {
         )
       })
 
+      it('ignores a virtual click on an unhighlighted item', () => {
+        Scene.scene(
+          { update, view: sceneView() },
+          Scene.given(openModel()),
+          acknowledgeAnchor,
+          acknowledgeBackdrop,
+          Scene.click(item(1)),
+          Scene.expectHandled(),
+          Scene.expectNoOutMessage(),
+          Scene.expect(item(0)).toHaveAttr('data-active', ''),
+          Scene.expect(item(1)).not.toHaveAttr('data-active'),
+        )
+      })
+
+      it('commits a virtual click on the highlighted item', () => {
+        Scene.scene(
+          { update, view: sceneView() },
+          Scene.given(openModel()),
+          acknowledgeAnchor,
+          acknowledgeBackdrop,
+          Scene.click(item(0)),
+          Scene.expectOutMessage(OutMessage.Selected({ value: 'Apple' })),
+          Scene.Command.resolve(FocusButton, Message.CompletedFocusButton()),
+          Scene.Mount.expectEnded(AnchorListbox, PortalListboxBackdrop),
+        )
+      })
     })
 
     describe('read-only', () => {

@@ -1188,7 +1188,15 @@ export const makeView = <Model extends BaseModel>(behavior: ViewBehavior) => {
               : []),
             ...(isReadOnly ? [h.DataAttribute('readonly', '')] : []),
             ...(isClickable
-              ? [h.OnClick(Message.SelectedItem({ item: itemToValue(item) }))]
+              ? [
+                  h.OnClickDetail(detail =>
+                    detail === 0 && !isActiveItem
+                      ? Option.some(Message.IgnoredMouseClick())
+                      : Option.some(
+                          Message.SelectedItem({ item: itemToValue(item) }),
+                        ),
+                  ),
+                ]
               : []),
             ...(isHoverable
               ? [
