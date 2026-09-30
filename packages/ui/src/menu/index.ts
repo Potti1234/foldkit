@@ -1162,7 +1162,9 @@ const menuViewImpl = defineView<Model, Message, ViewInputs<string>>(
 
     const backdrop = h.keyed('div')(`${id}-backdrop`, [
       h.OnMount(PortalMenuBackdrop()),
-      ...(isLeaving ? [] : [h.OnClick(Message.Closed())]),
+      ...(isLeaving
+        ? []
+        : [h.OnClick(Message.Closed()), h.OnContextMenuPreventDefault()]),
       ...(backdropClassName ? [h.Class(backdropClassName)] : []),
       ...backdropAttributes,
     ])
