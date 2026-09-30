@@ -593,6 +593,9 @@ export type Attribute<Message> = Data.TaggedEnum<{
   Popovertarget: { readonly value: string }
   Popovertargetaction: { readonly value: string }
   OnClick: { readonly message: Message; readonly options?: ClickOptions }
+  OnClickDetail: {
+    readonly f: (detail: number) => Option.Option<Message>
+  }
   OnDoubleClick: { readonly message: Message }
   OnMouseDown: { readonly message: Message }
   OnMouseUp: { readonly message: Message }
@@ -704,6 +707,9 @@ export type Attribute<Message> = Data.TaggedEnum<{
   }
   OnToggle: { readonly f: (isOpen: boolean) => Message }
   OnContextMenu: { readonly message: Message }
+  OnContextMenuPreventDefault: {
+    readonly maybeMessage: Option.Option<Message>
+  }
   OnDragStart: { readonly message: Message }
   OnDrag: { readonly message: Message }
   OnDragEnd: { readonly message: Message }
@@ -992,6 +998,7 @@ const {
   Popovertarget,
   Popovertargetaction,
   OnClick,
+  OnClickDetail,
   OnDoubleClick,
   OnMouseDown,
   OnMouseUp,
@@ -1035,6 +1042,7 @@ const {
   OnCancelPreventDefault,
   OnToggle,
   OnContextMenu,
+  OnContextMenuPreventDefault,
   OnDragStart,
   OnDrag,
   OnDragEnd,
@@ -1669,6 +1677,13 @@ const attributeHandlers: AttributeHandlers = {
       }
       ctx.dispatch(message)
     }),
+  OnClickDetail: ({ f: toMaybeMessage }, ctx: BuildContext) =>
+    addDataOn(ctx, 'click', (event: MouseEvent) => {
+      const maybeMessage = toMaybeMessage(event.detail)
+      if (Option.isSome(maybeMessage)) {
+        ctx.dispatch(maybeMessage.value)
+      }
+    }),
   OnDoubleClick: ({ message }, ctx: BuildContext) =>
     addDataOn(ctx, 'dblclick', () => ctx.dispatch(message)),
   OnMouseDown: ({ message }, ctx: BuildContext) =>
@@ -1971,6 +1986,15 @@ const attributeHandlers: AttributeHandlers = {
       contextmenu: (event: Event) => {
         event.preventDefault()
         ctx.dispatch(message)
+      },
+    }),
+  OnContextMenuPreventDefault: ({ maybeMessage }, ctx: BuildContext) =>
+    updateDataOn(ctx, {
+      contextmenu: (event: Event) => {
+        event.preventDefault()
+        if (Option.isSome(maybeMessage)) {
+          ctx.dispatch(maybeMessage.value)
+        }
       },
     }),
   OnDragStart: ({ message }, ctx: BuildContext) =>
@@ -3803,6 +3827,15 @@ type HtmlAttributes<Message> = {
     readonly message: Message
     readonly options?: ClickOptions
   }
+  /** Like `OnClick`, but the click's `detail` (its click count — 0 for a
+   *  synthetic or keyboard-initiated click) is handed to `toMaybeMessage`,
+   *  which may return a Message to dispatch. */
+  OnClickDetail: (
+    toMaybeMessage: (detail: number) => Option.Option<Message>,
+  ) => {
+    readonly _tag: 'OnClickDetail'
+    readonly f: (detail: number) => Option.Option<Message>
+  }
   OnDoubleClick: (message: Message) => {
     readonly _tag: 'OnDoubleClick'
     readonly message: Message
@@ -4100,6 +4133,13 @@ type HtmlAttributes<Message> = {
   OnContextMenu: (message: Message) => {
     readonly _tag: 'OnContextMenu'
     readonly message: Message
+  }
+  /** Prevents the default action of a `contextmenu` event. When a `message`
+   *  is provided it is dispatched; without one the attribute only suppresses
+   *  the native context menu. */
+  OnContextMenuPreventDefault: (message?: Message) => {
+    readonly _tag: 'OnContextMenuPreventDefault'
+    readonly maybeMessage: Option.Option<Message>
   }
   OnDragStart: (message: Message) => {
     readonly _tag: 'OnDragStart'
@@ -4955,6 +4995,8 @@ const htmlAttributes = <Message>(): HtmlAttributes<Message> => ({
     options === undefined
       ? OnClick({ message })
       : OnClick({ message, options }),
+  OnClickDetail: (toMaybeMessage: (detail: number) => Option.Option<Message>) =>
+    OnClickDetail({ f: toMaybeMessage }),
   OnDoubleClick: (message: Message) => OnDoubleClick({ message }),
   OnMouseDown: (message: Message) => OnMouseDown({ message }),
   OnMouseUp: (message: Message) => OnMouseUp({ message }),
@@ -5205,6 +5247,10 @@ const htmlAttributes = <Message>(): HtmlAttributes<Message> => ({
   OnToggle: (toMessage: (isOpen: boolean) => Message) =>
     OnToggle({ f: toMessage }),
   OnContextMenu: (message: Message) => OnContextMenu({ message }),
+  OnContextMenuPreventDefault: (message?: Message) =>
+    OnContextMenuPreventDefault({
+      maybeMessage: Option.fromNullishOr(message),
+    }),
   OnDragStart: (message: Message) => OnDragStart({ message }),
   OnDrag: (message: Message) => OnDrag({ message }),
   OnDragEnd: (message: Message) => OnDragEnd({ message }),
