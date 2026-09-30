@@ -1503,6 +1503,7 @@ describe('Combobox', () => {
     it('keeps the modal backdrop available after filtering removes every item', () => {
       const input = Scene.selector('#test-input')
       const backdrop = Scene.selector('[key="test-backdrop"]')
+      const itemsContainer = Scene.selector('[key="test-items-container"]')
       const filteredItemsView = (model: Model, h: HtmlBuilder<Message>) =>
         view(
           model,
@@ -1528,10 +1529,10 @@ describe('Combobox', () => {
         acknowledgeAnchor,
         acknowledgeBackdrop,
         Scene.type(input, 'zzz'),
-        Scene.Mount.expectEnded(AnchorCombobox),
-        Scene.expect(input).toHaveAttr('aria-expanded', 'false'),
-        Scene.expect(input).not.toHaveAttr('aria-controls'),
+        Scene.expect(input).toHaveAttr('aria-expanded', 'true'),
+        Scene.expect(input).toHaveAttr('aria-controls', 'test-items'),
         Scene.expect(input).not.toHaveAttr('aria-activedescendant'),
+        Scene.expect(itemsContainer).toExist(),
         Scene.expect(backdrop).toHaveHandler('click'),
         Scene.keydown(input, 'ArrowDown'),
         Scene.expectHandled(),
@@ -1543,7 +1544,7 @@ describe('Combobox', () => {
           [UnlockScroll, Message.CompletedUnlockScroll()],
           [RestoreInert, Message.CompletedRestoreInert()],
         ),
-        Scene.Mount.expectEnded(PortalComboboxBackdrop),
+        Scene.Mount.expectEnded(AnchorCombobox, PortalComboboxBackdrop),
       )
     })
 
@@ -1559,8 +1560,9 @@ describe('Combobox', () => {
           [LockScroll, Message.CompletedLockScroll()],
           [InertOthers, Message.CompletedInertOthers()],
         ),
-        Scene.expect(input).toHaveAttr('aria-expanded', 'false'),
+        Scene.expect(input).toHaveAttr('aria-expanded', 'true'),
         Scene.expect(backdrop).toHaveHandler('click'),
+        acknowledgeAnchor,
         acknowledgeBackdrop,
         Scene.keydown(input, 'Escape'),
         Scene.Command.resolveAllExact(
@@ -1568,7 +1570,7 @@ describe('Combobox', () => {
           [UnlockScroll, Message.CompletedUnlockScroll()],
           [RestoreInert, Message.CompletedRestoreInert()],
         ),
-        Scene.Mount.expectEnded(PortalComboboxBackdrop),
+        Scene.Mount.expectEnded(AnchorCombobox, PortalComboboxBackdrop),
       )
     })
 
@@ -1584,8 +1586,9 @@ describe('Combobox', () => {
           [LockScroll, Message.CompletedLockScroll()],
           [InertOthers, Message.CompletedInertOthers()],
         ),
-        Scene.expect(input).toHaveAttr('aria-expanded', 'false'),
+        Scene.expect(input).toHaveAttr('aria-expanded', 'true'),
         Scene.expect(backdrop).toHaveHandler('click'),
+        acknowledgeAnchor,
         acknowledgeBackdrop,
         Scene.keydown(input, 'Escape'),
         Scene.Command.resolveAllExact(
@@ -1593,7 +1596,7 @@ describe('Combobox', () => {
           [UnlockScroll, Message.CompletedUnlockScroll()],
           [RestoreInert, Message.CompletedRestoreInert()],
         ),
-        Scene.Mount.expectEnded(PortalComboboxBackdrop),
+        Scene.Mount.expectEnded(AnchorCombobox, PortalComboboxBackdrop),
       )
     })
 
@@ -1614,8 +1617,9 @@ describe('Combobox', () => {
           [LockScroll, Message.CompletedLockScroll()],
           [InertOthers, Message.CompletedInertOthers()],
         ),
-        Scene.expect(button).toHaveAttr('aria-expanded', 'false'),
+        Scene.expect(button).toHaveAttr('aria-expanded', 'true'),
         Scene.expect(backdrop).toHaveHandler('click'),
+        acknowledgeAnchor,
         acknowledgeBackdrop,
         Scene.keydown(Scene.selector('#test-input'), 'Escape'),
         Scene.Command.resolveAllExact(
@@ -1623,7 +1627,7 @@ describe('Combobox', () => {
           [UnlockScroll, Message.CompletedUnlockScroll()],
           [RestoreInert, Message.CompletedRestoreInert()],
         ),
-        Scene.Mount.expectEnded(PortalComboboxBackdrop),
+        Scene.Mount.expectEnded(AnchorCombobox, PortalComboboxBackdrop),
       )
     })
 

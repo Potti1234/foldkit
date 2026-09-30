@@ -931,10 +931,8 @@ export const makeView = <Model extends BaseModel>(behavior: ViewBehavior) => {
       const isLeaving =
         transitionState === 'LeaveStart' || transitionState === 'LeaveAnimating'
       const isVisible = isOpen || isLeaving
-      const isItemsPanelVisible =
-        isVisible && Array.isReadonlyArrayNonEmpty(items)
-      const isBackdropVisible =
-        isItemsPanelVisible || (isVisible && model.isModal)
+      const isItemsPanelVisible = isVisible
+      const isBackdropVisible = isVisible
 
       const animationAttributes: ReadonlyArray<
         ReturnType<typeof h.DataAttribute>
