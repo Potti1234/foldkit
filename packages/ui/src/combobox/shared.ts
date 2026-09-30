@@ -575,14 +575,11 @@ export const makeUpdate = <Model extends BaseModel>(
         }
       },
 
-      DeactivatedItem: () =>
-        model.activationTrigger === 'Pointer'
-          ? {
-              model: modifyBaseFields(model, {
-                maybeActiveItemIndex: () => Option.none(),
-              }),
-            }
-          : { model },
+      DeactivatedItem: () => ({
+        model: modifyBaseFields(model, {
+          maybeActiveItemIndex: () => Option.none(),
+        }),
+      }),
 
       SelectedItem: ({ item, displayText, wasSelected }) =>
         handlers.handleSelectedItem(model, item, displayText, wasSelected, {
@@ -1039,7 +1036,20 @@ export const makeView = <Model extends BaseModel>(behavior: ViewBehavior) => {
                 }),
               )
             }
-            const targetIndex = resolveActiveIndex('ArrowDown')
+
+            if (
+              Option.exists(
+                maybeActiveItemIndex,
+                activeIndex => activeIndex === lastEnabledIndex,
+              )
+            ) {
+              return Option.some(Message.DeactivatedItem())
+            }
+
+            const targetIndex = Option.match(maybeActiveItemIndex, {
+              onNone: () => firstEnabledIndex,
+              onSome: () => resolveActiveIndex('ArrowDown'),
+            })
             return Option.some(
               Message.ActivatedItem({
                 index: targetIndex,
@@ -1060,7 +1070,20 @@ export const makeView = <Model extends BaseModel>(behavior: ViewBehavior) => {
                 }),
               )
             }
-            const targetIndex = resolveActiveIndex('ArrowUp')
+
+            if (
+              Option.exists(
+                maybeActiveItemIndex,
+                activeIndex => activeIndex === firstEnabledIndex,
+              )
+            ) {
+              return Option.some(Message.DeactivatedItem())
+            }
+
+            const targetIndex = Option.match(maybeActiveItemIndex, {
+              onNone: () => lastEnabledIndex,
+              onSome: () => resolveActiveIndex('ArrowUp'),
+            })
             return Option.some(
               Message.ActivatedItem({
                 index: targetIndex,
@@ -1249,7 +1272,8 @@ export const makeView = <Model extends BaseModel>(behavior: ViewBehavior) => {
                       ]),
                   h.OnPointerLeave(pointerType =>
                     OptionExt.when(
-                      pointerType !== 'touch',
+                      pointerType !== 'touch' &&
+                        model.activationTrigger === 'Pointer',
                       Message.DeactivatedItem(),
                     ),
                   ),

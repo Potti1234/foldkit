@@ -512,7 +512,7 @@ describe('Combobox', () => {
         )
       })
 
-      it('preserves active item when keyboard-activated', () => {
+      it('clears active item when keyboard-activated', () => {
         Story.story(
           update,
           givenOpen,
@@ -529,7 +529,7 @@ describe('Combobox', () => {
           ),
           Story.message(Message.DeactivatedItem()),
           Story.model(model => {
-            expect(model.maybeActiveItemIndex).toStrictEqual(Option.some(2))
+            expect(model.maybeActiveItemIndex).toStrictEqual(Option.none())
           }),
         )
       })
@@ -2219,6 +2219,78 @@ describe('Combobox', () => {
             ScrollIntoView,
             Message.CompletedScrollIntoView(),
           ),
+        )
+      })
+
+      it('returns the highlight to the input past the last option', () => {
+        Scene.scene(
+          {
+            update,
+            view: readOnlyView(),
+          },
+          Scene.given(
+            modifyFields(openModel(), {
+              maybeActiveItemIndex: () => Option.some(1),
+            }),
+          ),
+          acknowledgeAnchor,
+          acknowledgeBackdrop,
+          Scene.expect(input).toHaveAttr(
+            'aria-activedescendant',
+            'test-item-1',
+          ),
+          Scene.keydown(input, 'ArrowDown'),
+          Scene.expectHandled(),
+          Scene.expect(item(1)).not.toHaveAttr('data-active'),
+          Scene.expect(input).not.toHaveAttr('aria-activedescendant'),
+          Scene.keydown(input, 'ArrowDown'),
+          Scene.expectHandled(),
+          Scene.expect(item(0)).toHaveAttr('data-active', ''),
+          Scene.expect(input).toHaveAttr(
+            'aria-activedescendant',
+            'test-item-0',
+          ),
+          Scene.Command.resolve(
+            ScrollIntoView,
+            Message.CompletedScrollIntoView(),
+          ),
+          Scene.expectNoOutMessage(),
+        )
+      })
+
+      it('returns the highlight to the input past the first option', () => {
+        Scene.scene(
+          {
+            update,
+            view: readOnlyView(),
+          },
+          Scene.given(
+            modifyFields(openModel(), {
+              maybeActiveItemIndex: () => Option.some(0),
+            }),
+          ),
+          acknowledgeAnchor,
+          acknowledgeBackdrop,
+          Scene.expect(input).toHaveAttr(
+            'aria-activedescendant',
+            'test-item-0',
+          ),
+          Scene.keydown(input, 'ArrowUp'),
+          Scene.expectHandled(),
+          Scene.expect(item(0)).not.toHaveAttr('data-active'),
+          Scene.expect(input).not.toHaveAttr('aria-activedescendant'),
+          Scene.keydown(input, 'ArrowUp'),
+          Scene.expectHandled(),
+          Scene.expect(item(1)).toHaveAttr('data-active', ''),
+          Scene.expect(input).toHaveAttr(
+            'aria-activedescendant',
+            'test-item-1',
+          ),
+          Scene.Command.resolve(
+            ScrollIntoView,
+            Message.CompletedScrollIntoView(),
+          ),
+          Scene.expectNoOutMessage(),
         )
       })
 
