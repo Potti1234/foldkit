@@ -226,6 +226,32 @@ describe('Listbox.Multi', () => {
       })
     })
 
+    describe('closed-state typeahead', () => {
+      const button = Scene.selector('#test-button')
+
+      it('selects the first matching item without opening', () => {
+        Scene.scene(
+          { update, view: sceneView() },
+          Scene.given(closedModel()),
+          Scene.keydown(button, 'B'),
+          Scene.expectOutMessage(OutMessage.Selected({ value: 'Banana' })),
+          Scene.Command.expectNone(),
+          Scene.expect(Scene.selector('#test-items-container')).toBeAbsent(),
+        )
+      })
+
+      it('ignores keys pressed with a command modifier', () => {
+        Scene.scene(
+          { update, view: sceneView() },
+          Scene.given(closedModel()),
+          Scene.keydown(button, 'B', { metaKey: true }),
+          Scene.expectIgnored(),
+          Scene.expectNoOutMessage(),
+          Scene.Command.expectNone(),
+        )
+      })
+    })
+
     describe('button labeling', () => {
       it('no aria-label or aria-labelledby on the trigger by default', () => {
         Scene.scene(

@@ -120,6 +120,10 @@
     "internal/performance-harness": {
       "entry": ["src/main.ts"],
       "ignoreDependencies": ["tailwindcss"]
+    },
+    "examples/findings-repro": {
+      "entry": ["src/*.ts", "*.html"],
+      "ignoreDependencies": ["@foldkit/devtools", "tailwindcss"]
     }
   },
   "ignore": ["**/*.css", "packages/website/public/**"],

@@ -83,6 +83,10 @@ describe('Combobox', () => {
       })
     })
 
+    it('seeds the input display text from inputValue', () => {
+      expect(init({ id: 'test', inputValue: 'Kyiv' }).inputValue).toBe('Kyiv')
+    })
+
     it('accepts isAnimated option', () => {
       const model = init({ id: 'test', isAnimated: true })
       expect(model.isAnimated).toBe(true)
@@ -508,7 +512,7 @@ describe('Combobox', () => {
         )
       })
 
-      it('preserves active item when keyboard-activated', () => {
+      it('clears active item when keyboard-activated', () => {
         Story.story(
           update,
           givenOpen,
@@ -525,7 +529,7 @@ describe('Combobox', () => {
           ),
           Story.message(Message.DeactivatedItem()),
           Story.model(model => {
-            expect(model.maybeActiveItemIndex).toStrictEqual(Option.some(2))
+            expect(model.maybeActiveItemIndex).toStrictEqual(Option.none())
           }),
         )
       })
@@ -1405,6 +1409,25 @@ describe('Combobox', () => {
       )
     })
 
+    it('disables hidden inputs when isDisabled', () => {
+      Scene.scene(
+        {
+          update,
+          view: sceneView({
+            formName: 'fruit',
+            isDisabled: true,
+            maybeSelectedValue: Option.some('Apple'),
+          }),
+        },
+        Scene.given(closedModel()),
+        Scene.tap(({ html }) => {
+          const hiddenInput = Scene.find(html, 'input[type="hidden"]')
+          expect(hiddenInput).toExist()
+          expect(hiddenInput).toBeDisabled()
+        }),
+      )
+    })
+
     it('items have role="option"', () => {
       Scene.scene(
         { update, view: sceneView() },
@@ -1499,6 +1522,7 @@ describe('Combobox', () => {
     it('keeps the modal backdrop available after filtering removes every item', () => {
       const input = Scene.selector('#test-input')
       const backdrop = Scene.selector('[key="test-backdrop"]')
+      const itemsContainer = Scene.selector('[key="test-items-container"]')
       const filteredItemsView = (model: Model, h: HtmlBuilder<Message>) =>
         view(
           model,
@@ -1524,10 +1548,10 @@ describe('Combobox', () => {
         acknowledgeAnchor,
         acknowledgeBackdrop,
         Scene.type(input, 'zzz'),
-        Scene.Mount.expectEnded(AnchorCombobox),
-        Scene.expect(input).toHaveAttr('aria-expanded', 'false'),
-        Scene.expect(input).not.toHaveAttr('aria-controls'),
+        Scene.expect(input).toHaveAttr('aria-expanded', 'true'),
+        Scene.expect(input).toHaveAttr('aria-controls', 'test-items'),
         Scene.expect(input).not.toHaveAttr('aria-activedescendant'),
+        Scene.expect(itemsContainer).toExist(),
         Scene.expect(backdrop).toHaveHandler('click'),
         Scene.keydown(input, 'ArrowDown'),
         Scene.expectHandled(),
@@ -1539,7 +1563,7 @@ describe('Combobox', () => {
           [UnlockScroll, Message.CompletedUnlockScroll()],
           [RestoreInert, Message.CompletedRestoreInert()],
         ),
-        Scene.Mount.expectEnded(PortalComboboxBackdrop),
+        Scene.Mount.expectEnded(AnchorCombobox, PortalComboboxBackdrop),
       )
     })
 
@@ -1555,8 +1579,9 @@ describe('Combobox', () => {
           [LockScroll, Message.CompletedLockScroll()],
           [InertOthers, Message.CompletedInertOthers()],
         ),
-        Scene.expect(input).toHaveAttr('aria-expanded', 'false'),
+        Scene.expect(input).toHaveAttr('aria-expanded', 'true'),
         Scene.expect(backdrop).toHaveHandler('click'),
+        acknowledgeAnchor,
         acknowledgeBackdrop,
         Scene.keydown(input, 'Escape'),
         Scene.Command.resolveAllExact(
@@ -1564,7 +1589,7 @@ describe('Combobox', () => {
           [UnlockScroll, Message.CompletedUnlockScroll()],
           [RestoreInert, Message.CompletedRestoreInert()],
         ),
-        Scene.Mount.expectEnded(PortalComboboxBackdrop),
+        Scene.Mount.expectEnded(AnchorCombobox, PortalComboboxBackdrop),
       )
     })
 
@@ -1580,8 +1605,9 @@ describe('Combobox', () => {
           [LockScroll, Message.CompletedLockScroll()],
           [InertOthers, Message.CompletedInertOthers()],
         ),
-        Scene.expect(input).toHaveAttr('aria-expanded', 'false'),
+        Scene.expect(input).toHaveAttr('aria-expanded', 'true'),
         Scene.expect(backdrop).toHaveHandler('click'),
+        acknowledgeAnchor,
         acknowledgeBackdrop,
         Scene.keydown(input, 'Escape'),
         Scene.Command.resolveAllExact(
@@ -1589,7 +1615,7 @@ describe('Combobox', () => {
           [UnlockScroll, Message.CompletedUnlockScroll()],
           [RestoreInert, Message.CompletedRestoreInert()],
         ),
-        Scene.Mount.expectEnded(PortalComboboxBackdrop),
+        Scene.Mount.expectEnded(AnchorCombobox, PortalComboboxBackdrop),
       )
     })
 
@@ -1610,8 +1636,9 @@ describe('Combobox', () => {
           [LockScroll, Message.CompletedLockScroll()],
           [InertOthers, Message.CompletedInertOthers()],
         ),
-        Scene.expect(button).toHaveAttr('aria-expanded', 'false'),
+        Scene.expect(button).toHaveAttr('aria-expanded', 'true'),
         Scene.expect(backdrop).toHaveHandler('click'),
+        acknowledgeAnchor,
         acknowledgeBackdrop,
         Scene.keydown(Scene.selector('#test-input'), 'Escape'),
         Scene.Command.resolveAllExact(
@@ -1619,7 +1646,7 @@ describe('Combobox', () => {
           [UnlockScroll, Message.CompletedUnlockScroll()],
           [RestoreInert, Message.CompletedRestoreInert()],
         ),
-        Scene.Mount.expectEnded(PortalComboboxBackdrop),
+        Scene.Mount.expectEnded(AnchorCombobox, PortalComboboxBackdrop),
       )
     })
 
@@ -2192,7 +2219,7 @@ describe('Combobox', () => {
         )
       })
 
-      it('keeps Home and End navigation live', () => {
+      it('leaves Home and End to the text caret', () => {
         Scene.scene(
           {
             update,
@@ -2202,19 +2229,85 @@ describe('Combobox', () => {
           acknowledgeAnchor,
           acknowledgeBackdrop,
           Scene.keydown(input, 'End'),
-          Scene.expect(item(1)).toHaveAttr('data-active', ''),
-          Scene.expectNoOutMessage(),
-          Scene.Command.resolve(
-            ScrollIntoView,
-            Message.CompletedScrollIntoView(),
-          ),
+          Scene.expectIgnored(),
+          Scene.expect(item(0)).toHaveAttr('data-active', ''),
           Scene.keydown(input, 'Home'),
+          Scene.expectIgnored(),
           Scene.expect(item(0)).toHaveAttr('data-active', ''),
           Scene.expectNoOutMessage(),
+          Scene.Command.expectNone(),
+        )
+      })
+
+      it('returns the highlight to the input past the last option', () => {
+        Scene.scene(
+          {
+            update,
+            view: readOnlyView(),
+          },
+          Scene.given(
+            modifyFields(openModel(), {
+              maybeActiveItemIndex: () => Option.some(1),
+            }),
+          ),
+          acknowledgeAnchor,
+          acknowledgeBackdrop,
+          Scene.expect(input).toHaveAttr(
+            'aria-activedescendant',
+            'test-item-1',
+          ),
+          Scene.keydown(input, 'ArrowDown'),
+          Scene.expectHandled(),
+          Scene.expect(item(1)).not.toHaveAttr('data-active'),
+          Scene.expect(input).not.toHaveAttr('aria-activedescendant'),
+          Scene.keydown(input, 'ArrowDown'),
+          Scene.expectHandled(),
+          Scene.expect(item(0)).toHaveAttr('data-active', ''),
+          Scene.expect(input).toHaveAttr(
+            'aria-activedescendant',
+            'test-item-0',
+          ),
           Scene.Command.resolve(
             ScrollIntoView,
             Message.CompletedScrollIntoView(),
           ),
+          Scene.expectNoOutMessage(),
+        )
+      })
+
+      it('returns the highlight to the input past the first option', () => {
+        Scene.scene(
+          {
+            update,
+            view: readOnlyView(),
+          },
+          Scene.given(
+            modifyFields(openModel(), {
+              maybeActiveItemIndex: () => Option.some(0),
+            }),
+          ),
+          acknowledgeAnchor,
+          acknowledgeBackdrop,
+          Scene.expect(input).toHaveAttr(
+            'aria-activedescendant',
+            'test-item-0',
+          ),
+          Scene.keydown(input, 'ArrowUp'),
+          Scene.expectHandled(),
+          Scene.expect(item(0)).not.toHaveAttr('data-active'),
+          Scene.expect(input).not.toHaveAttr('aria-activedescendant'),
+          Scene.keydown(input, 'ArrowUp'),
+          Scene.expectHandled(),
+          Scene.expect(item(1)).toHaveAttr('data-active', ''),
+          Scene.expect(input).toHaveAttr(
+            'aria-activedescendant',
+            'test-item-1',
+          ),
+          Scene.Command.resolve(
+            ScrollIntoView,
+            Message.CompletedScrollIntoView(),
+          ),
+          Scene.expectNoOutMessage(),
         )
       })
 

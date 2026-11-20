@@ -106,6 +106,30 @@ describe('Menu', () => {
         ),
       )
     })
+
+    it('prevents the native context menu on the backdrop', () => {
+      const backdrop = Scene.selector('[key="test-backdrop"]')
+      const itemsContainer = Scene.selector('[key="test-items-container"]')
+
+      Scene.scene(
+        { update, view: sceneView() },
+        Scene.given(
+          update(
+            init({ id: 'test' }),
+            Message.Opened({ maybeActiveItemIndex: Option.some(0) }),
+          ).model,
+        ),
+        Scene.Mount.resolve(AnchorMenu, Message.CompletedAnchorMenu()),
+        Scene.Mount.resolve(
+          PortalMenuBackdrop,
+          Message.CompletedPortalMenuBackdrop(),
+        ),
+        Scene.expect(backdrop).toHaveHandler('contextmenu'),
+        Scene.contextMenu(backdrop),
+        Scene.expectIgnored(),
+        Scene.expect(itemsContainer).toExist(),
+      )
+    })
   })
 
   describe('init', () => {

@@ -1843,6 +1843,7 @@ type SimulatedClick = Readonly<{
   event: Readonly<{
     preventDefault: () => void
     stopPropagation: () => void
+    detail: number
   }>
   isDefaultPrevented: () => boolean
   isPropagationStopped: () => boolean
@@ -1860,6 +1861,7 @@ const createSimulatedClick = (): SimulatedClick => {
       stopPropagation: () => {
         isPropagationStopped = true
       },
+      detail: 0,
     },
     isDefaultPrevented: () => isDefaultPrevented,
     isPropagationStopped: () => isPropagationStopped,

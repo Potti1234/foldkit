@@ -11,14 +11,26 @@ export const findFirstEnabledIndex =
     itemCount: number,
     focusedIndex: number,
     isDisabled: (index: number) => boolean,
+    wrapAround = true,
   ) =>
-  (startIndex: number, direction: 1 | -1): number =>
-    pipe(
-      itemCount,
-      Array.makeBy(step => wrapIndex(startIndex + step * direction, itemCount)),
-      Array.findFirst(Predicate.not(isDisabled)),
-      Option.getOrElse(() => focusedIndex),
-    )
+  (startIndex: number, direction: 1 | -1): number => {
+    const stepCount = wrapAround
+      ? itemCount
+      : direction === 1
+        ? Math.max(0, itemCount - startIndex)
+        : Math.max(0, startIndex + 1)
+    return stepCount === 0
+      ? focusedIndex
+      : pipe(
+          Array.makeBy(stepCount, step =>
+            wrapAround
+              ? wrapIndex(startIndex + step * direction, itemCount)
+              : startIndex + step * direction,
+          ),
+          Array.findFirst(Predicate.not(isDisabled)),
+          Option.getOrElse(() => focusedIndex),
+        )
+  }
 
 export const keyToIndex = (
   nextKey: string,
@@ -26,8 +38,14 @@ export const keyToIndex = (
   itemCount: number,
   focusedIndex: number,
   isDisabled: (index: number) => boolean,
+  wrapAround = true,
 ): ((key: string) => number) => {
-  const find = findFirstEnabledIndex(itemCount, focusedIndex, isDisabled)
+  const find = findFirstEnabledIndex(
+    itemCount,
+    focusedIndex,
+    isDisabled,
+    wrapAround,
+  )
 
   return (key: string): number =>
     Match.value(key).pipe(

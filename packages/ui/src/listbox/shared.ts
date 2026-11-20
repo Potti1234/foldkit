@@ -485,16 +485,27 @@ export const makeUpdate = <Model extends BaseModel>(
         return closeListbox(model, closeWithoutFocusCommands)
       },
 
-      ActivatedItem: ({ index, activationTrigger }) => ({
-        model: modifyBaseFields(model, {
-          maybeActiveItemIndex: () => Option.some(index),
-          activationTrigger: () => activationTrigger,
-        }),
-        commands:
-          activationTrigger === 'Keyboard'
-            ? [ScrollIntoView({ id: model.id, index })]
-            : [],
-      }),
+      ActivatedItem: ({ index, activationTrigger }) => {
+        if (
+          Option.exists(
+            model.maybeActiveItemIndex,
+            activeIndex => activeIndex === index,
+          )
+        ) {
+          return { model }
+        }
+
+        return {
+          model: modifyBaseFields(model, {
+            maybeActiveItemIndex: () => Option.some(index),
+            activationTrigger: () => activationTrigger,
+          }),
+          commands:
+            activationTrigger === 'Keyboard'
+              ? [ScrollIntoView({ id: model.id, index })]
+              : [],
+        }
+      },
 
       MovedPointerOverItem: ({ index, screenX, screenY }) => {
         const isSamePosition = Option.exists(
@@ -897,9 +908,16 @@ export const makeView = <Model extends BaseModel>(behavior: ViewBehavior) => {
         ),
       )
 
-      const handleButtonKeyDown = (key: string): Option.Option<Message> => {
+      const handleButtonKeyDown = (
+        key: string,
+        modifiers: {
+          readonly ctrlKey: boolean
+          readonly altKey: boolean
+          readonly metaKey: boolean
+        },
+      ): Option.Option<Message> => {
         if (isOpen) {
-          return handleItemsKeyDown(key)
+          return handleItemsKeyDown(key, modifiers)
         }
 
         return Match.value(key).pipe(
@@ -920,6 +938,37 @@ export const makeView = <Model extends BaseModel>(behavior: ViewBehavior) => {
                 ),
               }),
             ),
+          ),
+          Match.when(
+            key =>
+              isPrintableKey(key) &&
+              !modifiers.ctrlKey &&
+              !modifiers.altKey &&
+              !modifiers.metaKey,
+            () => {
+              if (isReadOnly) {
+                return Option.some(Message.SuppressedItemCommit())
+              }
+
+              return pipe(
+                resolveTypeaheadMatch(
+                  items,
+                  key,
+                  selectedItemIndex,
+                  isItemDisabledByIndex,
+                  itemToSearchText,
+                  false,
+                ),
+                Option.flatMap(index =>
+                  pipe(
+                    Array.get(items, index),
+                    Option.map(item =>
+                      Message.SelectedItem({ item: itemToValue(item) }),
+                    ),
+                  ),
+                ),
+              )
+            },
           ),
           Match.orElse(() => Option.none()),
         )
@@ -968,6 +1017,7 @@ export const makeView = <Model extends BaseModel>(behavior: ViewBehavior) => {
               items.length,
               activeIndex,
               isItemDisabledByIndex,
+              false,
             )(key),
         })
 
@@ -994,7 +1044,14 @@ export const makeView = <Model extends BaseModel>(behavior: ViewBehavior) => {
         }
       }
 
-      const handleItemsKeyDown = (key: string): Option.Option<Message> =>
+      const handleItemsKeyDown = (
+        key: string,
+        modifiers: {
+          readonly ctrlKey: boolean
+          readonly altKey: boolean
+          readonly metaKey: boolean
+        },
+      ): Option.Option<Message> =>
         Match.value(key).pipe(
           Match.when('Escape', () => Option.some(Message.Closed())),
           Match.when('Enter', resolveCommitMessage),
@@ -1011,7 +1068,14 @@ export const makeView = <Model extends BaseModel>(behavior: ViewBehavior) => {
               }),
             ),
           ),
-          Match.when(isPrintableKey, () => searchForKey(key)),
+          Match.when(
+            key =>
+              isPrintableKey(key) &&
+              !modifiers.ctrlKey &&
+              !modifiers.altKey &&
+              !modifiers.metaKey,
+            () => searchForKey(key),
+          ),
           Match.orElse(() => Option.none()),
         )
 
@@ -1071,7 +1135,9 @@ export const makeView = <Model extends BaseModel>(behavior: ViewBehavior) => {
       const itemsContainerAttributes = [
         h.Id(`${id}-items`),
         h.Role('listbox'),
-        h.AriaOrientation(String.toLowerCase(orientation)),
+        ...(orientation === 'Horizontal'
+          ? [h.AriaOrientation('horizontal')]
+          : []),
         ...(behavior.ariaMultiSelectable ? [h.AriaMultiSelectable(true)] : []),
         ...(isReadOnly
           ? [h.AriaReadonly(true), h.DataAttribute('readonly', '')]
@@ -1122,7 +1188,15 @@ export const makeView = <Model extends BaseModel>(behavior: ViewBehavior) => {
               : []),
             ...(isReadOnly ? [h.DataAttribute('readonly', '')] : []),
             ...(isClickable
-              ? [h.OnClick(Message.SelectedItem({ item: itemToValue(item) }))]
+              ? [
+                  h.OnClickDetail(detail =>
+                    detail === 0 && !isActiveItem
+                      ? Option.some(Message.IgnoredMouseClick())
+                      : Option.some(
+                          Message.SelectedItem({ item: itemToValue(item) }),
+                        ),
+                  ),
+                ]
               : []),
             ...(isHoverable
               ? [

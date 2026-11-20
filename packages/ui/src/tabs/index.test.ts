@@ -255,6 +255,17 @@ describe('Tabs', () => {
       const find = findFirstEnabledIndex(6, 0, disabledAt(1, 2, 3))
       expect(find(1, 1)).toBe(4)
     })
+
+    it('stays at the edge instead of wrapping when wrapAround is false', () => {
+      const find = findFirstEnabledIndex(3, 0, noneDisabled, false)
+      expect(find(2, 1)).toBe(2)
+      expect(find(0, -1)).toBe(0)
+    })
+
+    it('keeps scanning without wrapping to find an enabled tab', () => {
+      const find = findFirstEnabledIndex(4, 1, disabledAt(1), false)
+      expect(find(1, 1)).toBe(2)
+    })
   })
 
   describe('keyToIndex', () => {
@@ -312,6 +323,30 @@ describe('Tabs', () => {
     it('skips disabled tabs during arrow navigation', () => {
       const resolve = keyToIndex('ArrowRight', 'ArrowLeft', 5, 0, disabledAt(1))
       expect(resolve('ArrowRight')).toBe(2)
+    })
+
+    it('stays at the last tab on next key when wrapAround is false', () => {
+      const resolve = keyToIndex(
+        'ArrowRight',
+        'ArrowLeft',
+        3,
+        2,
+        noneDisabled,
+        false,
+      )
+      expect(resolve('ArrowRight')).toBe(2)
+    })
+
+    it('stays at the first tab on previous key when wrapAround is false', () => {
+      const resolve = keyToIndex(
+        'ArrowRight',
+        'ArrowLeft',
+        3,
+        0,
+        noneDisabled,
+        false,
+      )
+      expect(resolve('ArrowLeft')).toBe(0)
     })
   })
 })

@@ -67,6 +67,10 @@ export type BaseInitConfig = Readonly<{
    *  `false`. */
   immediate?: boolean
   selectInputOnFocus?: boolean
+  /** Seeds the input's displayed text. Pass the display text of a selection
+   *  the parent restores before mount, so the input shows the committed
+   *  value instead of opening blank until the first close. */
+  inputValue?: string
 }>
 
 /** Creates the shared base fields for a combobox model from a config. Each variant spreads this and adds its selection fields. */
@@ -81,7 +85,7 @@ export const baseInit = (config: BaseInitConfig): BaseModel => ({
   animation: Animation.init({ id: `${config.id}-items` }),
   maybeActiveItemIndex: Option.none(),
   activationTrigger: 'Keyboard',
-  inputValue: '',
+  inputValue: config.inputValue ?? '',
   maybeLastPointerPosition: Option.none(),
 })
 
@@ -571,14 +575,11 @@ export const makeUpdate = <Model extends BaseModel>(
         }
       },
 
-      DeactivatedItem: () =>
-        model.activationTrigger === 'Pointer'
-          ? {
-              model: modifyBaseFields(model, {
-                maybeActiveItemIndex: () => Option.none(),
-              }),
-            }
-          : { model },
+      DeactivatedItem: () => ({
+        model: modifyBaseFields(model, {
+          maybeActiveItemIndex: () => Option.none(),
+        }),
+      }),
 
       SelectedItem: ({ item, displayText, wasSelected }) =>
         handlers.handleSelectedItem(model, item, displayText, wasSelected, {
@@ -930,10 +931,8 @@ export const makeView = <Model extends BaseModel>(behavior: ViewBehavior) => {
       const isLeaving =
         transitionState === 'LeaveStart' || transitionState === 'LeaveAnimating'
       const isVisible = isOpen || isLeaving
-      const isItemsPanelVisible =
-        isVisible && Array.isReadonlyArrayNonEmpty(items)
-      const isBackdropVisible =
-        isItemsPanelVisible || (isVisible && model.isModal)
+      const isItemsPanelVisible = isVisible
+      const isBackdropVisible = isVisible
 
       const animationAttributes: ReadonlyArray<
         ReturnType<typeof h.DataAttribute>
@@ -1035,7 +1034,20 @@ export const makeView = <Model extends BaseModel>(behavior: ViewBehavior) => {
                 }),
               )
             }
-            const targetIndex = resolveActiveIndex('ArrowDown')
+
+            if (
+              Option.exists(
+                maybeActiveItemIndex,
+                activeIndex => activeIndex === lastEnabledIndex,
+              )
+            ) {
+              return Option.some(Message.DeactivatedItem())
+            }
+
+            const targetIndex = Option.match(maybeActiveItemIndex, {
+              onNone: () => firstEnabledIndex,
+              onSome: () => resolveActiveIndex('ArrowDown'),
+            })
             return Option.some(
               Message.ActivatedItem({
                 index: targetIndex,
@@ -1056,7 +1068,20 @@ export const makeView = <Model extends BaseModel>(behavior: ViewBehavior) => {
                 }),
               )
             }
-            const targetIndex = resolveActiveIndex('ArrowUp')
+
+            if (
+              Option.exists(
+                maybeActiveItemIndex,
+                activeIndex => activeIndex === firstEnabledIndex,
+              )
+            ) {
+              return Option.some(Message.DeactivatedItem())
+            }
+
+            const targetIndex = Option.match(maybeActiveItemIndex, {
+              onNone: () => lastEnabledIndex,
+              onSome: () => resolveActiveIndex('ArrowUp'),
+            })
             return Option.some(
               Message.ActivatedItem({
                 index: targetIndex,
@@ -1077,24 +1102,6 @@ export const makeView = <Model extends BaseModel>(behavior: ViewBehavior) => {
             }
             return Option.some(
               Message.Closed({ restingInputValue, isClearable: !isReadOnly }),
-            )
-          }),
-          Match.whenOr('Home', 'End', () => {
-            if (!isOpen) {
-              return Option.none()
-            }
-
-            if (Array.isReadonlyArrayEmpty(items)) {
-              return Option.some(Message.SuppressedEmptyItemNavigation())
-            }
-
-            const targetIndex = resolveActiveIndex(key)
-            return Option.some(
-              Message.ActivatedItem({
-                index: targetIndex,
-                activationTrigger: 'Keyboard',
-                maybeImmediateSelection: resolveImmediateSelection(targetIndex),
-              }),
             )
           }),
           Match.orElse(() => Option.none()),
@@ -1245,7 +1252,8 @@ export const makeView = <Model extends BaseModel>(behavior: ViewBehavior) => {
                       ]),
                   h.OnPointerLeave(pointerType =>
                     OptionExt.when(
-                      pointerType !== 'touch',
+                      pointerType !== 'touch' &&
+                        model.activationTrigger === 'Pointer',
                       Message.DeactivatedItem(),
                     ),
                   ),
@@ -1404,12 +1412,19 @@ export const makeView = <Model extends BaseModel>(behavior: ViewBehavior) => {
 
       const hiddenInputs = formName
         ? Array.match(selectedValues, {
-            onEmpty: () => [h.input([h.Type('hidden'), h.Name(formName)])],
+            onEmpty: () => [
+              h.input([
+                h.Type('hidden'),
+                h.Name(formName),
+                ...(isDisabled ? [h.Disabled(true)] : []),
+              ]),
+            ],
             onNonEmpty: Array.map(selectedValue =>
               h.input([
                 h.Type('hidden'),
                 h.Name(formName),
                 h.Value(selectedValue),
+                ...(isDisabled ? [h.Disabled(true)] : []),
               ]),
             ),
           })

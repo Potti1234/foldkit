@@ -139,4 +139,20 @@ describe('anchorSetup padding', () => {
     expect(paddingOfMiddleware(0, 'shift')).toBe(0)
     expect(paddingOfMiddleware(0, 'size')).toBe(0)
   })
+  it('enables shift crossAxis so side placements clamp their escape edge', () => {
+    computePositionMock.mockResolvedValue({
+      x: 10,
+      y: 20,
+      placement: 'left',
+    })
+    mountAnchor({ placement: 'left', portal: false })
+
+    const shiftMiddleware = pipe(
+      optionsOfCall(0).middleware ?? [],
+      Array.flatMap(middleware => (middleware ? [middleware] : [])),
+      Array.findFirst(({ name }) => name === 'shift'),
+      Option.getOrThrowWith(() => new Error('Expected shift middleware')),
+    )
+    expect(shiftMiddleware.options?.crossAxis).toBe(true)
+  })
 })

@@ -1488,6 +1488,68 @@ describe('Listbox', () => {
       })
     })
 
+    describe('edge cases', () => {
+      const itemsContainer = Scene.selector('#test-items')
+      const item = (index: number) => Scene.selector(`#test-item-${index}`)
+
+      it('does not wrap focus at the list edges', () => {
+        Scene.scene(
+          { update, view: sceneView() },
+          Scene.given(openModel()),
+          acknowledgeAnchor,
+          acknowledgeBackdrop,
+          Scene.keydown(itemsContainer, 'ArrowDown'),
+          Scene.Command.resolve(
+            ScrollIntoView,
+            Message.CompletedScrollIntoView(),
+          ),
+          Scene.expect(item(1)).toHaveAttr('data-active', ''),
+          Scene.keydown(itemsContainer, 'ArrowDown'),
+          Scene.expectHandled(),
+          Scene.expect(item(1)).toHaveAttr('data-active', ''),
+          Scene.Command.expectNone(),
+          Scene.keydown(itemsContainer, 'ArrowUp'),
+          Scene.Command.resolve(
+            ScrollIntoView,
+            Message.CompletedScrollIntoView(),
+          ),
+          Scene.expect(item(0)).toHaveAttr('data-active', ''),
+          Scene.keydown(itemsContainer, 'ArrowUp'),
+          Scene.expectHandled(),
+          Scene.expect(item(0)).toHaveAttr('data-active', ''),
+          Scene.Command.expectNone(),
+          Scene.expectNoOutMessage(),
+        )
+      })
+
+      it('ignores a virtual click on an unhighlighted item', () => {
+        Scene.scene(
+          { update, view: sceneView() },
+          Scene.given(openModel()),
+          acknowledgeAnchor,
+          acknowledgeBackdrop,
+          Scene.click(item(1)),
+          Scene.expectHandled(),
+          Scene.expectNoOutMessage(),
+          Scene.expect(item(0)).toHaveAttr('data-active', ''),
+          Scene.expect(item(1)).not.toHaveAttr('data-active'),
+        )
+      })
+
+      it('commits a virtual click on the highlighted item', () => {
+        Scene.scene(
+          { update, view: sceneView() },
+          Scene.given(openModel()),
+          acknowledgeAnchor,
+          acknowledgeBackdrop,
+          Scene.click(item(0)),
+          Scene.expectOutMessage(OutMessage.Selected({ value: 'Apple' })),
+          Scene.Command.resolve(FocusButton, Message.CompletedFocusButton()),
+          Scene.Mount.expectEnded(AnchorListbox, PortalListboxBackdrop),
+        )
+      })
+    })
+
     describe('read-only', () => {
       const button = Scene.selector('#test-button')
       const itemsContainer = Scene.selector('#test-items')
@@ -1646,6 +1708,19 @@ describe('Listbox', () => {
         )
       })
 
+      it('ignores keys pressed with a command modifier', () => {
+        Scene.scene(
+          { update, view: sceneView({ isReadOnly: true }) },
+          Scene.given(openModel()),
+          acknowledgeAnchor,
+          acknowledgeBackdrop,
+          Scene.keydown(itemsContainer, 'B', { metaKey: true }),
+          Scene.expectIgnored(),
+          Scene.expectNoOutMessage(),
+          Scene.Command.expectNone(),
+        )
+      })
+
       it('keeps arrow, Home, and End navigation live', () => {
         Scene.scene(
           { update, view: sceneView({ isReadOnly: true }) },
@@ -1750,6 +1825,82 @@ describe('Listbox', () => {
           Scene.Command.resolve(FocusButton, Message.CompletedFocusButton()),
           Scene.Mount.expectEnded(AnchorListbox, PortalListboxBackdrop),
           Scene.expect(itemsContainer).toBeAbsent(),
+        )
+      })
+    })
+
+    describe('closed-state typeahead', () => {
+      const button = Scene.selector('#test-button')
+
+      it('selects the first matching item without opening', () => {
+        Scene.scene(
+          { update, view: sceneView() },
+          Scene.given(closedModel()),
+          Scene.keydown(button, 'B'),
+          Scene.expectOutMessage(OutMessage.Selected({ value: 'Banana' })),
+          Scene.Command.expectNone(),
+          Scene.expect(Scene.selector('#test-items-container')).toBeAbsent(),
+        )
+      })
+
+      it('searches forward from the selected item', () => {
+        Scene.scene(
+          {
+            update,
+            view: sceneView({
+              items: ['Alpha', 'Avocado', 'Beta'],
+              maybeSelectedValue: Option.some('Alpha'),
+            }),
+          },
+          Scene.given(closedModel()),
+          Scene.keydown(button, 'a'),
+          Scene.expectOutMessage(OutMessage.Selected({ value: 'Avocado' })),
+          Scene.Command.expectNone(),
+        )
+      })
+
+      it('does nothing on a key with no match', () => {
+        Scene.scene(
+          { update, view: sceneView() },
+          Scene.given(closedModel()),
+          Scene.keydown(button, 'z'),
+          Scene.expectIgnored(),
+          Scene.expectNoOutMessage(),
+          Scene.Command.expectNone(),
+        )
+      })
+
+      it('does not select while read-only', () => {
+        Scene.scene(
+          { update, view: sceneView({ isReadOnly: true }) },
+          Scene.given(closedModel()),
+          Scene.keydown(button, 'B'),
+          Scene.expectNoOutMessage(),
+          Scene.Command.expectNone(),
+        )
+      })
+
+      it.each([{ metaKey: true }, { ctrlKey: true }, { altKey: true }])(
+        'ignores keys pressed with a command modifier',
+        modifiers => {
+          Scene.scene(
+            { update, view: sceneView() },
+            Scene.given(closedModel()),
+            Scene.keydown(button, 'B', modifiers),
+            Scene.expectIgnored(),
+            Scene.expectNoOutMessage(),
+            Scene.Command.expectNone(),
+          )
+        },
+      )
+
+      it('still typeaheads a shifted letter', () => {
+        Scene.scene(
+          { update, view: sceneView() },
+          Scene.given(closedModel()),
+          Scene.keydown(button, 'B', { shiftKey: true }),
+          Scene.expectOutMessage(OutMessage.Selected({ value: 'Banana' })),
+          Scene.Command.expectNone(),
         )
       })
     })
@@ -1967,15 +2118,14 @@ describe('Listbox', () => {
     })
 
     describe('orientation', () => {
-      it('items container has aria-orientation="vertical" by default', () => {
+      it('items container has no aria-orientation by default', () => {
         Scene.scene(
           { update, view: sceneView() },
           Scene.given(openModel()),
           Scene.tap(({ html }) => {
-            expect(Scene.find(html, '[key="test-items-container"]')).toHaveAttr(
-              'aria-orientation',
-              'vertical',
-            )
+            expect(
+              Scene.find(html, '[key="test-items-container"]'),
+            ).not.toHaveAttr('aria-orientation')
           }),
           acknowledgeAnchor,
           acknowledgeBackdrop,
